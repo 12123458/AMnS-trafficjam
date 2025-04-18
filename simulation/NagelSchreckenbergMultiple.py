@@ -120,3 +120,6 @@ class NagelSchreckenbergMultiple:
     def get_time_stats(self):
         return np.array(list(self.times_taken.values()))
     
+    def reset_stats(self):
+        self.times_taken = {}
+    

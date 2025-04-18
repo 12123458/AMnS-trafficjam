@@ -37,6 +37,8 @@ class SimulationMultiple:
         end = time.time()
         if verbose:
             print(f"Warmup progress: 100% - {end - start:.4f} seconds")
+        
+        self.model.reset_stats()
 
         start = time.time()
         mod = math.ceil(s/100)
@@ -101,42 +103,55 @@ class SimulationMultiple:
             "time_min": 0,
             "time_max": 0,
             "time_avg": 0,
-            "velocity_avg": 0
+            "velocity_avg": 0,
+            "cars": 0,
+            "time_avg_by_cars": 0,
+            "velocity_avg_by_cars": 0,
+            "time_adj": 0,
+            "velocity_avg_adj": 0
         }
+
+        # Our method of measuring time has the crucial weakness that it only records cars that complete the track
+        # However, with high lag_parameters cars tend to block the entrance of the road and therefore no more travel, which distorts the data
+        reference_speed = 4 + (1-self.lag_parameter)
+        reference_cars = self.steps * self.entry_rate
+        cars = len(time_stats)
+        time_estimated = self.road_length / ((cars / reference_cars) * reference_speed)
+
+        time_avg = np.average(time_stats)
+
+        # Interpolate a time based on the recorded and estimated times
+        k = time_avg * 0.5
+        t = abs(time_estimated - time_avg) / (abs(time_estimated - time_avg) + k)
+        time_adj = time_avg * (1-t) + time_estimated * t
 
         return {
             "length": self.road_length * 7.5,
             "length_model": self.road_length,
             "time_min": np.min(time_stats),
             "time_max": np.max(time_stats),
-            "time_avg": np.average(time_stats),
-            "velocity_avg": self.road_length * 7.5 / np.average(time_stats)
+            "time_avg": time_avg,
+            "velocity_avg": self.road_length * 7.5 / time_avg,
+            "cars": cars,
+            "time_avg_by_cars": time_estimated,
+            "velocity_avg_by_cars": self.road_length * 7.5 / time_estimated,
+            "time_adj": time_adj,
+            "velocity_avg_adj": self.road_length * 7.5 / time_adj,
         }
     
     def print_stats(self):
         stats = self.get_stats()
         print(f"Total road segment length: {stats["length"]:.0f}m")
-        print(f"Average completion time: {stats["time_avg"]:.2f}s")
-        print(f"Average speed: {stats["velocity_avg"]:.2f}m/s or {stats["velocity_avg"]*3.6:.0f}km/h")
+        print(f"Average completion time (recoded): {stats["time_avg"]:.2f}s")
+        print(f"Average completion time (estimated): {stats["time_avg_by_cars"]:.2f}s")
+        print(f"Average completion time (interpolated): {stats["time_adj"]:.2f}s")
+        print(f"Average speed (recoded): {stats["velocity_avg"]:.2f}m/s or {stats["velocity_avg"]*3.6:.0f}km/h")
+        print(f"Average speed (estimated): {stats["velocity_avg_by_cars"]:.2f}m/s or {stats["velocity_avg_by_cars"]*3.6:.0f}km/h")
+        print(f"Average speed (interpolated): {stats["velocity_avg_adj"]:.2f}m/s or {stats["velocity_avg_adj"]*3.6:.0f}km/h")
 
 if __name__ == "__main__":
-    sim = SimulationMultiple(100, 3, 0.4, 1.8, True)
+    sim = SimulationMultiple(100, 3, 0.33, 1.548, True)
     sim.run()
     sim.print_stats()
     sim.animate(100)
-
-    # stats = { "multi_lane_features": 0, "control": 0 }
-    # sim = SimulationMultiple(200, 3, 0.3, 1.0, True)
-    # for i in range(5):
-    #     sim.run()
-    #     stats["multi_lane_features"] += sim.get_stats()["time_avg"]
-    #     sim.reset()
-    # sim = SimulationMultiple(200, 3, 0.3, 1.0, False)
-    # for i in range(5):
-    #     sim.run()
-    #     stats["control"] += sim.get_stats()["time_avg"]
-    #     sim.reset()
-
-    # print(f"Multi lane feature avg time: {stats['multi_lane_features']/5:.2f}")
-    # print(f"Control avg time: {stats['control']/5:.2f}")
     

@@ -52,6 +52,7 @@ class ParameterHeatmap:
 
         print(f"Generation progress: {self.max_simulations} / {self.max_simulations}")
 
+    # Defined as __call__ so the ProcessPoolExecutor works
     def __call__(self, args):
         i, lag_parameter, j, entry_rate = args
         sum_of_avg_travel_time = 0
@@ -61,7 +62,7 @@ class ParameterHeatmap:
             sim.run(verbose=False)
             current_run = i*self.entry_rate_steps*self.repetitions + j*self.repetitions + (r+1)
             print(f"Generation progress: {current_run} / {self.max_simulations}", end="\r")
-            sum_of_avg_travel_time += sim.get_stats()["time_avg"]
+            sum_of_avg_travel_time += sim.get_stats()["time_adj"]
         return i, j, sum_of_avg_travel_time / self.repetitions
 
     def plot(self, figsize=(10,8), save_path=None):
@@ -80,6 +81,6 @@ class ParameterHeatmap:
         plt.show()
 
 if __name__ == "__main__":
-    ph = ParameterHeatmap(road_length=100, lanes=3, repetitions=3, multi_lane_rules=False)
+    ph = ParameterHeatmap(road_length=100, lanes=3, repetitions=3, multi_lane_rules=True)
     ph.run_simulations()
-    ph.plot(save_path="heatmap_road100_lanes3_no-multi.png")
+    ph.plot(save_path="heatmap_road100_lanes3.png")
