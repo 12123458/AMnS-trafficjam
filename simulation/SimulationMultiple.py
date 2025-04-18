@@ -18,7 +18,7 @@ class SimulationMultiple:
         self.steps = 0
         self.data = np.empty((self.steps, self.lanes, self.road_length))
 
-    def run(self, warmup_steps=0, steps=0, warmup_steps_mult=5, steps_mult=10):
+    def run(self, warmup_steps=0, steps=0, warmup_steps_mult=5, steps_mult=10, verbose=True):
         ws = warmup_steps_mult * self.road_length
         if warmup_steps:
             ws = warmup_steps
@@ -31,22 +31,24 @@ class SimulationMultiple:
         start = time.time()
         mod = math.ceil(ws/100)
         for i in range(ws):
-            if i % mod == 0:
+            if verbose and i % mod == 0:
                 print(f"Warmup progress: {i / mod:3.0f}%",end="\r")
             self.model.step()
         end = time.time()
-        print(f"Warmup progress: 100% - {end - start:.4f} seconds")
+        if verbose:
+            print(f"Warmup progress: 100% - {end - start:.4f} seconds")
 
         start = time.time()
         mod = math.ceil(s/100)
         self.data = np.empty((self.steps, self.lanes, self.road_length))
         for i in range(s):
-            if i % mod == 0:
+            if verbose and i % mod == 0:
                 print(f"Simulation progress: {i / mod:3.0f}%",end="\r")
             self.data[i] = self.model.get_road()
             self.model.step()
         end = time.time()
-        print(f"Simulation progress: 100% - {end - start:.4f} seconds")
+        if verbose:
+            print(f"Simulation progress: 100% - {end - start:.4f} seconds")
 
     def reset(self):
         self.model = NagelSchreckenbergMultiple(self.road_length, self.lanes, 5, self.lag_parameter, self.entry_rate, self.multi_lane_rules)
@@ -118,7 +120,7 @@ class SimulationMultiple:
         print(f"Average speed: {stats["velocity_avg"]:.2f}m/s or {stats["velocity_avg"]*3.6:.0f}km/h")
 
 if __name__ == "__main__":
-    sim = SimulationMultiple(100, 4, 0.4, 1.8, True)
+    sim = SimulationMultiple(100, 3, 0.4, 1.8, True)
     sim.run()
     sim.print_stats()
     sim.animate(100)
