@@ -124,6 +124,10 @@ class SimulationMultiple:
         k = time_avg * 0.5
         t = abs(time_estimated - time_avg) / (abs(time_estimated - time_avg) + k)
         time_adj = time_avg * (1-t) + time_estimated * t
+        # The estimation is only necessary if the recorded time is unrealistically low
+        # If the estimation is lower than the recording, it suggests that the recording is fine as it is
+        if time_estimated < time_avg:
+            time_adj = time_avg
 
         return {
             "length": self.road_length * 7.5,
