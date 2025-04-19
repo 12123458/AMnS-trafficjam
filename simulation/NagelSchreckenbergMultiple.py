@@ -24,6 +24,8 @@ class NagelSchreckenbergMultiple:
 
         self.closing_end_times = {}
 
+        self.entry_queue = []
+
     def step(self):
         new_road = np.full((self.lanes, self.road_length), -1)
         new_velocities = {}
@@ -106,15 +108,23 @@ class NagelSchreckenbergMultiple:
                     self.times_taken[car_id] = self.current_step - start_time
 
         # New cars entering
+        # Fill new cars initially into a queue to keep track of how long they have to wait outside of our road due to a congestion at the start
+        # This ensures that the entry_rate parameter never becomes useless and distorts values
         remaining_entry_rate = self.entry_rate
-        for lane in np.random.permutation(self.lanes):
-            if new_road[lane, 0] == -1 and random.random() < remaining_entry_rate:
-                new_road[lane, 0] = self.next_car_id
-                # New cars don't start standing, but a certain speed
-                new_velocities[self.next_car_id] = random.randint(math.ceil(self.v_max/2.0), self.v_max)
-                self.start_times[self.next_car_id] = self.current_step # Record start time
+        while remaining_entry_rate > 0:
+            if random.random() < remaining_entry_rate:
+                self.entry_queue.append(self.next_car_id)
+                self.start_times[self.next_car_id] = self.current_step
                 self.next_car_id += 1
             remaining_entry_rate -= 1
+
+        # Randomly place the new cars in the lanes if there is space
+        for lane in np.random.permutation(self.lanes):
+            if self.entry_queue and new_road[lane, 0] == -1:
+                car_id = self.entry_queue.pop(0)
+                new_road[lane, 0] = car_id
+                # New cars don't start standing, but a certain speed
+                new_velocities[car_id] = random.randint(self.v_max, self.v_max)
 
         self.road = new_road
         self.velocities = new_velocities
@@ -128,6 +138,9 @@ class NagelSchreckenbergMultiple:
     
     def reset_stats(self):
         self.times_taken = {}
+
+    def reset_queue(self):
+        self.entry_queue = []
 
     def set_parameters(self, lag_parameter, entry_rate):
         self.lag_parameter = lag_parameter

@@ -62,7 +62,7 @@ class ParameterHeatmap:
             sim.run(verbose=False)
             current_run = i*self.entry_rate_steps*self.repetitions + j*self.repetitions + (r+1)
             print(f"Generation progress: {current_run} / {self.max_simulations}", end="\r")
-            sum_of_avg_travel_time += sim.get_stats()["time_adj"]
+            sum_of_avg_travel_time += sim.get_stats()["time_avg"]
         return i, j, sum_of_avg_travel_time / self.repetitions
 
     def plot(self, figsize=(10,8), save_path=None):
@@ -81,6 +81,6 @@ class ParameterHeatmap:
         plt.show()
 
 if __name__ == "__main__":
-    ph = ParameterHeatmap(road_length=100, lanes=3, repetitions=3, multi_lane_rules=True)
+    ph = ParameterHeatmap(road_length=100, lanes=3, repetitions=3, entry_rate_min=0.5, entry_rate_max=2)
     ph.run_simulations()
-    ph.plot(save_path="heatmap_road100_lanes3.png")
+    ph.plot(save_path="heatmap_road100_lanes3_less-entry.png")

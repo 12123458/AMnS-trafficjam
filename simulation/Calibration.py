@@ -30,10 +30,9 @@ class Calibration:
         """
         # Set the initial parameters if not given
         if lag_parameter is None:
-            # Initialize the lag_parameter smaller, because it makes sense in the modeled system to not dawdle too much
             lag_parameter = (self.lag_parameter_max - self.lag_parameter_min) / 3
         if entry_rate is None:
-            entry_rate = (self.entry_rate_max - self.entry_rate_min) / 2
+            entry_rate = (self.entry_rate_max - self.entry_rate_min) / 3
         
         # Define the update steps for the calibration
         if lag_parameter_step is None:
@@ -91,7 +90,7 @@ class Calibration:
         road_length, lanes, lag_parameter, entry_rate = args
         sim = SimulationMultiple(road_length, lanes, lag_parameter, entry_rate)
         sim.run(verbose=False)
-        return sim.get_stats()["time_adj"]
+        return sim.get_stats()["time_avg"]
     
     def print_results(self):
         print("\nFinal Parameters:")
@@ -108,10 +107,6 @@ class Calibration:
         print(f"    Result speed: {result_speed:.2f}m/s | {result_speed*3.6:.2f}km/h")
     
 if __name__ == "__main__":
-    cal = Calibration(40, 1)
-    cal.calibrate()
-    cal.print_results()
-    cal.calibrate(ratio=2)
-    cal.print_results()
-    cal.calibrate(ratio=0.5)
+    cal = Calibration(25, 1)
+    cal.calibrate(lag_parameter_step=0.05, entry_rate_step=0.01)
     cal.print_results()
