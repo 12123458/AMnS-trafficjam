@@ -22,11 +22,17 @@ class NagelSchreckenbergMultiple:
         self.start_times = {}
         self.times_taken = {}
 
+        self.closing_end_times = {}
+
     def step(self):
         new_road = np.full((self.lanes, self.road_length), -1)
         new_velocities = {}
 
-        car_indices = np.argwhere(self.road != -1)
+        for lane, end_time in self.closing_end_times.items():
+            if end_time < self.current_step:
+                new_road[lane, :] = -2
+
+        car_indices = np.argwhere(self.road >= 0)
         for lane, pos in car_indices:
             car_id = self.road[lane, pos]
             v = self.velocities[car_id]
@@ -122,4 +128,13 @@ class NagelSchreckenbergMultiple:
     
     def reset_stats(self):
         self.times_taken = {}
+
+    def set_parameters(self, lag_parameter, entry_rate):
+        self.lag_parameter = lag_parameter
+        self.entry_rate = entry_rate
     
+    def close_lane(self, lane, duration):
+        self.closing_end_times[lane] = self.current_step + duration
+        # Just close a lane and effectively delete all the cars on it
+        # In the grand scheme this shouldn't impact the results much
+        self.road[lane, :] = -2 

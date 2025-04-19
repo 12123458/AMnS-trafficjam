@@ -154,8 +154,16 @@ class SimulationMultiple:
         print(f"Average speed (interpolated): {stats["velocity_avg_adj"]:.2f}m/s or {stats["velocity_avg_adj"]*3.6:.0f}km/h")
 
 if __name__ == "__main__":
-    sim = SimulationMultiple(100, 3, 0.33, 1.548, True)
+    sim = SimulationMultiple(100, 3, 0.506, 2.112, True)
     sim.run()
     sim.print_stats()
-    sim.animate(100)
+    #sim.animate(100)
+    
+    sim = SimulationMultiple(100, 3, 0.385, 2.549, True)
+    sim.run()
+    sim.print_stats()
+    
+    sim = SimulationMultiple(100, 3, 0.625, 1.711, True)
+    sim.run()
+    sim.print_stats()
     

@@ -18,7 +18,16 @@ class Calibration:
         self.entry_rate_min = entry_rate_min
         self.entry_rate_max = entry_rate_max
 
-    def calibrate(self, lag_parameter=None, entry_rate=None):
+    def calibrate(self, lag_parameter=None, entry_rate=None, lag_parameter_step=None, entry_rate_step=None, ratio=1):
+        """Calibrates the parameters 'lag_parameter' and 'entry_rate' in order to achieve the target travel time.
+        
+        Args:
+            lag_parameter: The initial lag_parameter to start calibration from. If not set, gets assigned 1/3 of the possible range.
+            entry_rate: The initial entry_rate to start calibration from. If not set, gets assigned 1/2 of the possible range.
+            lag_parameter_step: The initial lag_parameter_step to use for calibration. If not set, gets assigned 1/10 of the possible range.
+            entry_rate_step: The initial entry_rate_step to use for calibration. If not set, gets assigned 1/10 of the possible range.
+            ratio: The ratio of the parameter update steps relative to each other. Is only used if step sizes are not set manually. 1 means both are updated in the same relative steps, >1 means entry_rate is updated more, <1 means lag_rate is updated more.
+        """
         # Set the initial parameters if not given
         if lag_parameter is None:
             # Initialize the lag_parameter smaller, because it makes sense in the modeled system to not dawdle too much
@@ -27,8 +36,10 @@ class Calibration:
             entry_rate = (self.entry_rate_max - self.entry_rate_min) / 2
         
         # Define the update steps for the calibration
-        lag_parameter_step = (self.lag_parameter_max - self.lag_parameter_min) / 10
-        entry_rate_step = (self.entry_rate_max - self.entry_rate_min) / 10
+        if lag_parameter_step is None:
+            lag_parameter_step = (self.lag_parameter_max - self.lag_parameter_min) / (10 * ratio)
+        if entry_rate_step is None:
+            entry_rate_step = (self.entry_rate_max - self.entry_rate_min) / (10 / ratio)
         
         dist = math.inf
         counter = 0
@@ -97,6 +108,10 @@ class Calibration:
         print(f"    Result speed: {result_speed:.2f}m/s | {result_speed*3.6:.2f}km/h")
     
 if __name__ == "__main__":
-    cal = Calibration(25, 1)
+    cal = Calibration(40, 1)
     cal.calibrate()
+    cal.print_results()
+    cal.calibrate(ratio=2)
+    cal.print_results()
+    cal.calibrate(ratio=0.5)
     cal.print_results()
