@@ -1,12 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 import time
 import math
 
 from NagelSchreckenbergMultiple import NagelSchreckenbergMultiple
 
 class ScenarioLaneClosure:
+    """This class functions similar to SimulationMultiple, but is specifically tailored to model a lane closure scenario."""
     def __init__(self, road_length=100, lanes=3, lag_parameter=0.3, entry_rate=0.5):
         self.road_length = road_length
         self.lanes = lanes
@@ -47,42 +47,28 @@ class ScenarioLaneClosure:
         if verbose:
             print(f"Simulation progress: 100% - {end - start:.4f} seconds")
 
-    def _calculate_parameters(self, duration, parameters):
-        parameters = sorted(parameters, key=lambda x: x[0])
-
-        if parameters:
-            for i in range(1, len(parameters)):
-                first_entry_start = parameters[0][0]
-                last_entry_end = parameters[-1][1]
-
-                start = parameters[i-1][1]
-                end = parameters[i][0]
-                if end - start > 0:
-                    parameters.append((start, end, self.lag_parameter, self.entry_rate))
-            
-            
-            
-            if first_entry_start > 0:
-                parameters.append((0, first_entry_start, self.lag_parameter, self.entry_rate))
-            if last_entry_end < duration:
-                parameters.append((last_entry_end, duration, self.lag_parameter, self.entry_rate))
-        else:
-            parameters.append((0, duration, self.lag_parameter, self.entry_rate))
-
-        return sorted(parameters, key=lambda x: x[0])
-
     def run(self, duration=43200, parameters=[]):
+        """Run the scenario for the given duration and parameters.
+
+        Args:
+            duration: The total duration of the scenario
+            parameters: List of tuples in the form (start_time, duration, lane), which characterize the closure of a given lane for a given duration, starting at a given time.
+        """
         parameters = sorted(parameters, key=lambda x: x[0])
 
         self._warmup()
 
         duration_in_minutes = 43200 / 60
+        # If no parameters are given, use an impossible default tuple
         cur_parameter = parameters.pop(0) if parameters else (-1,-1,-1)
         for step in range(duration):
+            # Check each step, whether a closure applies
             if step == cur_parameter[0]:
                 self.model.close_lane(cur_parameter[2], cur_parameter[1])
+                # Get the next closure tuple, if none exists, the old one cannot be called again anyway
                 if parameters:
                     cur_parameter = parameters.pop(0)
+            # Track stats each minute
             if step % 60 == 0:
                 if self.model.get_time_stats().any():
                     self.avg_travel_times.append(np.average(self.model.get_time_stats()))
@@ -96,6 +82,7 @@ class ScenarioLaneClosure:
 if __name__ == "__main__":
     scen = ScenarioLaneClosure(lag_parameter=0.3, entry_rate=1.0)
 
+    # Close the 3. (right-most) lane for 3 hours starting at 11
     scen.run(parameters=[(3*3600, 3*3600, 2)])
 
     x_positions = list(range(0, 721, 60))

@@ -1,12 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 import time
 import math
 
 from NagelSchreckenbergMultiple import NagelSchreckenbergMultiple
 
 class ScenarioRushour:
+    """This class functions similar to SimulationMultiple, but is specifically tailored to model a rushhour scenario. 
+    More generally, this class allows for modeling dynamically changing lag_parameter and entry_rate to simulate changing traffic conditions.
+    """
     def __init__(self, road_length=100, lanes=3, lag_parameter=0.3, entry_rate=0.5):
         self.road_length = road_length
         self.lanes = lanes
@@ -48,9 +50,16 @@ class ScenarioRushour:
             print(f"Simulation progress: 100% - {end - start:.4f} seconds")
 
     def _calculate_parameters(self, duration, parameters):
+        """This helper method supplements a list of changed traffic parameter tuples by adding additional tuples for normal conditions.
+        
+        Args:
+            duration: The total duration of the scenario
+            parameters: List of tuples in the form (start_time, end_time, lag_parameter, entry_rate), which characterize traffic conditions for a given interval.
+        """
         parameters = sorted(parameters, key=lambda x: x[0])
 
         if parameters:
+            # Add default-value tuples in-between
             for i in range(1, len(parameters)):
                 first_entry_start = parameters[0][0]
                 last_entry_end = parameters[-1][1]
@@ -60,24 +69,35 @@ class ScenarioRushour:
                 if end - start > 0:
                     parameters.append((start, end, self.lag_parameter, self.entry_rate))
             
+            # Add default-value tuples at the start and end, if necessary
             if first_entry_start > 0:
                 parameters.append((0, first_entry_start, self.lag_parameter, self.entry_rate))
             if last_entry_end < duration:
                 parameters.append((last_entry_end, duration, self.lag_parameter, self.entry_rate))
         else:
+            # In case of no parameters, simply add a single default entry
             parameters.append((0, duration, self.lag_parameter, self.entry_rate))
 
+        # Sort the parameters by start time
         return sorted(parameters, key=lambda x: x[0])
 
     def run(self, duration=43200, parameters=[]):
+        """Run the scenario for the given duration and parameters.
+
+        Args:
+            duration: The total duration of the scenario
+            parameters: List of tuples in the form (start_time, end_time, lag_parameter, entry_rate), which characterize traffic conditions for a given interval.
+        """
         parameters = self._calculate_parameters(duration, parameters)
 
         self._warmup()
 
         duration_in_minutes = 43200 / 60
+        # Run the simulation with the chosen parameters at any given time
         for start, end, lag_parameter, entry_rate in parameters:
             self.model.set_parameters(lag_parameter, entry_rate)
             for i in range(start, end):
+                # Track stats each minute
                 if i % 60 == 0:
                     if self.model.get_time_stats().any():
                         self.avg_travel_times.append(np.average(self.model.get_time_stats()))
