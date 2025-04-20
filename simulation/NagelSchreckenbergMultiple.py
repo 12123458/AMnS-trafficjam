@@ -31,7 +31,7 @@ class NagelSchreckenbergMultiple:
         new_velocities = {}
 
         for lane, end_time in self.closing_end_times.items():
-            if end_time < self.current_step:
+            if self.current_step < end_time:
                 new_road[lane, :] = -2
 
         car_indices = np.argwhere(self.road >= 0)
@@ -131,7 +131,7 @@ class NagelSchreckenbergMultiple:
         self.current_step += 1
 
     def get_road(self):
-        return np.vectorize(lambda x: self.velocities.get(x, -1))(self.road)
+        return np.vectorize(lambda x: self.velocities.get(x, -1) if x >= 0 else x)(self.road)
     
     def get_time_stats(self):
         return np.array(list(self.times_taken.values()))
