@@ -139,8 +139,8 @@ class NagelSchreckenbergMultiple:
                 # Popping the first/oldest car -> FIFO queue
                 car_id = self.entry_queue.pop(0)
                 new_road[lane, 0] = car_id
-                # New cars don't start standing, but a certain speed
-                new_velocities[car_id] = random.randint(self.v_max, self.v_max)
+                # New cars enter with max speed as they are either free to speed up anyway or would slow down anyway
+                new_velocities[car_id] = self.v_max
 
         self.road = new_road
         self.velocities = new_velocities
